@@ -1,10 +1,11 @@
+
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Page({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; // 이 부분이 핵심!
 
   const { data, error } = await supabase
     .from('notes')
