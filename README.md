@@ -1,128 +1,126 @@
-# Cards - 간단하고 세련된 노트 정리 플랫폼
+# 인류 진화와 질병 - Notion-style Note Platform
 
-노션과 같은 편리한 노트 정리 기능과 간편한 공유 시스템을 제공하는 세련된 노트 관리 플랫폼입니다.
+A modern, Notion-inspired note-taking platform built with Next.js, TypeScript, and Supabase.
 
-## 주요 기능
+## Features
 
-✨ **회원가입/로그인** - Supabase 인증을 통한 안전한 사용자 관리  
-📝 **노트 작성/편집** - 실시간 텍스트 편집 및 이미지 첨부 기능  
-📁 **파일/폴더 정리** - 체계적인 노트 관리 시스템  
-🌐 **노트 공유** - 원클릭 공개/비공개 설정 및 링크 공유  
-📱 **반응형 디자인** - 모바일, 태블릿, 데스크톱 완벽 지원  
-🎨 **미니멀 디자인** - 디터 람스/애플 스타일의 세련된 UI
+- **User Authentication**: Email/password signup and login with unique nicknames
+- **Rich Document Editor**: Create and edit documents with text and image blocks
+- **Real-time Auto-save**: Automatic saving with debounced updates and conflict resolution
+- **Document Sharing**: Share documents with other users by nickname, with view/edit permissions
+- **Public Documents**: Make documents publicly accessible
+- **Search Functionality**: Search your documents by title and content
+- **User Discovery**: Find other users and browse their public documents
+- **Image Upload**: Upload and manage images within documents with drag-and-drop positioning
+- **Version Control**: Document versioning with conflict detection
+- **Responsive Design**: Clean, Notion-inspired UI that works on all devices
 
-## 기술 스택
+## Tech Stack
 
-- **Frontend**: Next.js 15 + React 19 + TypeScript
-- **Styling**: Tailwind CSS
-- **Backend**: Supabase (인증, 데이터베이스, 스토리지)
-- **Deployment**: Vercel
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth with JWT
+- **Storage**: Supabase Storage for images
+- **UI Icons**: Lucide React
+- **Utilities**: use-debounce, uuid
 
-## 설치 및 실행
+## Database Schema
 
-### 1. 프로젝트 클론
-```bash
-git clone [repository-url]
-cd cards
-```
+The application uses the following main tables:
+- `users`: User profiles with unique nicknames
+- `documents`: Document storage with JSONB content and versioning
+- `document_shares`: Sharing permissions between users
+- `images`: Image metadata and positioning data
 
-### 2. 의존성 설치
-```bash
-npm install
-```
+## Getting Started
 
-### 3. 환경변수 설정
+### Prerequisites
+
+- Node.js 18+ and npm
+- Supabase account and project
+
+### Environment Variables
+
+Create a `.env.local` file in the root directory:
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_JWT_SECRET=your_jwt_secret
 ```
 
-### 4. 개발 서버 실행
-```bash
-npm run dev
-```
+### Database Setup
 
-### 5. 프로덕션 빌드
-```bash
-npm run build
-npm start
-```
+1. Create a new Supabase project
+2. Run the SQL commands in `database-schema.sql` to set up the database schema
+3. Enable Row Level Security (RLS) policies as defined in the schema
 
-## Supabase 설정
+### Installation
 
-### 데이터베이스 스키마
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-```sql
--- notes 테이블
-CREATE TABLE notes (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  content TEXT,
-  image_url TEXT,
-  is_public BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  user_id UUID REFERENCES auth.users(id)
-);
+### Deployment
 
--- RLS 정책
-ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+The application can be deployed to:
+- **Vercel** (recommended for Next.js)
+- **Netlify**
+- **Railway**
+- Any Node.js hosting platform
 
-CREATE POLICY "Users can view their own notes" ON notes
-  FOR SELECT USING (auth.uid() = user_id);
+For Vercel deployment:
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy automatically on push to main branch
 
-CREATE POLICY "Users can insert their own notes" ON notes
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+## API Routes
 
-CREATE POLICY "Users can update their own notes" ON notes
-  FOR UPDATE USING (auth.uid() = user_id);
+- `GET/POST /api/documents` - List/create documents
+- `GET/PATCH/DELETE /api/documents/[id]` - Document operations
+- `POST/DELETE /api/documents/[id]/share` - Sharing management
+- `GET /api/users/search` - User search
+- `GET /api/users/[nickname]/documents` - User's public documents
+- `GET /api/search` - Document search
 
-CREATE POLICY "Users can delete their own notes" ON notes
-  FOR DELETE USING (auth.uid() = user_id);
+## Security Features
 
--- 공개 노트 조회 정책
-CREATE POLICY "Anyone can view public notes" ON notes
-  FOR SELECT USING (is_public = true);
-```
+- JWT-based authentication
+- Row Level Security (RLS) in database
+- Document access control
+- Version conflict detection
+- Input validation and sanitization
 
-### 스토리지 설정
+## Performance Optimizations
 
-```sql
--- note-images 버킷 생성 및 정책 설정
-INSERT INTO storage.buckets (id, name, public) VALUES ('note-images', 'note-images', true);
+- Debounced auto-save (1 second delay)
+- Optimistic UI updates
+- Efficient database queries with indexes
+- Lazy loading and code splitting
+- Compressed image storage
 
-CREATE POLICY "Users can upload images" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'note-images' AND auth.role() = 'authenticated');
+## Browser Support
 
-CREATE POLICY "Anyone can view images" ON storage.objects
-  FOR SELECT USING (bucket_id = 'note-images');
-```
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
 
-## 배포
+## Contributing
 
-### Vercel 배포
-1. GitHub에 프로젝트 푸시
-2. Vercel에서 프로젝트 import
-3. 환경변수 설정
-4. 자동 배포 완료
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-## 프로젝트 구조
+## License
 
-```
-src/
-├── app/
-│   ├── dashboard/          # 메인 대시보드
-│   ├── login/             # 로그인 페이지
-│   ├── signUp/            # 회원가입 페이지
-│   ├── note/[id]/         # 공유 노트 페이지
-│   ├── layout.tsx         # 루트 레이아웃
-│   └── page.tsx           # 홈페이지 (리다이렉트)
-├── components/            # 재사용 컴포넌트
-├── lib/
-│   └── supabase.ts       # Supabase 클라이언트
-└── styles/
-    └── globals.css       # 글로벌 스타일
-```
-
-## 라이선스
-
-MIT License
+MIT License - see LICENSE file for details
