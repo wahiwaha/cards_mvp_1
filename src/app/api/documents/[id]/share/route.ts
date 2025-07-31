@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/auth';
 // POST /api/documents/[id]/share - Share document with user
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -13,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const documentId = params.id;
+    const { id: documentId } = await params;
     const body = await request.json();
     const { viewerNickname, canEdit = false } = body;
 
@@ -109,7 +109,7 @@ export async function POST(
 // DELETE /api/documents/[id]/share - Remove document share
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -117,7 +117,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const documentId = params.id;
+    const { id: documentId } = await params;
     const { searchParams } = new URL(request.url);
     const viewerNickname = searchParams.get('viewerNickname');
 

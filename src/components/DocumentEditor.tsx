@@ -25,6 +25,9 @@ interface DocumentData {
   version: number;
   owner_id: string;
   is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  users: { nickname: string };
 }
 
 interface DocumentEditorProps {
@@ -357,12 +360,12 @@ export default function DocumentEditor({
                       };
 
                       const handleMouseUp = () => {
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
+                        window.document.removeEventListener('mousemove', handleMouseMove);
+                        window.document.removeEventListener('mouseup', handleMouseUp);
                       };
 
-                      document.addEventListener('mousemove', handleMouseMove);
-                      document.addEventListener('mouseup', handleMouseUp);
+                      window.document.addEventListener('mousemove', handleMouseMove);
+                      window.document.addEventListener('mouseup', handleMouseUp);
                     }}
                   />
                 )}

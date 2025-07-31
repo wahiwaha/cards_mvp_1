@@ -40,7 +40,7 @@ interface DocumentShare {
   users: { nickname: string };
 }
 
-export default function DocumentPage({ params }: { params: { id: string } }) {
+export default function DocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [shares, setShares] = useState<DocumentShare[]>([]);
@@ -58,9 +58,13 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     if (user) {
-      loadDocument();
+      const loadDocumentAsync = async () => {
+        const { id } = await params;
+        loadDocument(id);
+      };
+      loadDocumentAsync();
     }
-  }, [user, params.id]);
+  }, [user, params]);
 
   const loadUser = async () => {
     try {
@@ -76,12 +80,12 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     }
   };
 
-  const loadDocument = async () => {
+  const loadDocument = async (documentId: string) => {
     if (!user) return;
 
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch(`/api/documents/${params.id}`, {
+      const response = await fetch(`/api/documents/${documentId}`, {
         headers: {
           'Authorization': `Bearer ${session.data.session?.access_token}`,
         },
@@ -120,9 +124,9 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
           viewer_id,
           can_edit,
           created_at,
-          users!document_shares_viewer_id_fkey (nickname)
+          users!document_shares_viewer_id_fkey!inner (nickname)
         `)
-        .eq('document_id', params.id);
+        .eq('document_id', document.id) as { data: DocumentShare[] | null; error: any };
 
       if (error) throw error;
       setShares(shares || []);
@@ -137,7 +141,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     setSharingLoading(true);
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch(`/api/documents/${params.id}/share`, {
+      const response = await fetch(`/api/documents/${document.id}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +178,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
     try {
       const session = await supabase.auth.getSession();
       const response = await fetch(
-        `/api/documents/${params.id}/share?viewerNickname=${encodeURIComponent(viewerNickname)}`,
+        `/api/documents/${document.id}/share?viewerNickname=${encodeURIComponent(viewerNickname)}`,
         {
           method: 'DELETE',
           headers: {
@@ -196,7 +200,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch(`/api/documents/${params.id}`, {
+      const response = await fetch(`/api/documents/${document.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -223,7 +227,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
 
     try {
       const session = await supabase.auth.getSession();
-      const response = await fetch(`/api/documents/${params.id}`, {
+      const response = await fetch(`/api/documents/${document.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.data.session?.access_token}`,
@@ -319,7 +323,7 @@ export default function DocumentPage({ params }: { params: { id: string } }) {
       {/* Document Editor */}
       <main className="pb-20">
         <DocumentEditor
-          documentId={params.id}
+          documentId={document.id}
           initialData={document}
           canEdit={canEdit}
           onSave={(updatedDoc) => setDocument(updatedDoc)}

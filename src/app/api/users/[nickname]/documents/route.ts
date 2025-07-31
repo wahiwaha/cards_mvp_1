@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/auth';
 // GET /api/users/[nickname]/documents - Get public documents by user nickname
 export async function GET(
   request: NextRequest,
-  { params }: { params: { nickname: string } }
+  { params }: { params: Promise<{ nickname: string }> }
 ) {
   try {
     const user = await verifyAuth(request);
@@ -13,7 +13,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const targetNickname = decodeURIComponent(params.nickname);
+    const { nickname } = await params;
+    const targetNickname = decodeURIComponent(nickname);
 
     // Find user by nickname
     const { data: targetUser } = await supabase
@@ -60,16 +61,24 @@ export async function GET(
 
 // Helper function to get document IDs shared with the current user from a specific owner
 async function getSharedDocumentIds(viewerId: string, ownerId: string): Promise<string> {
+  // First get document IDs from the owner
+  const { data: ownerDocs } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('owner_id', ownerId);
+
+  if (!ownerDocs || ownerDocs.length === 0) {
+    return '';
+  }
+
+  const ownerDocIds = ownerDocs.map(doc => doc.id);
+
+  // Then get shares for the viewer for those documents
   const { data: shares } = await supabase
     .from('document_shares')
     .select('document_id')
     .eq('viewer_id', viewerId)
-    .in('document_id', 
-      supabase
-        .from('documents')
-        .select('id')
-        .eq('owner_id', ownerId)
-    );
+    .in('document_id', ownerDocIds);
 
   if (!shares || shares.length === 0) {
     return '';
